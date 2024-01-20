@@ -1,0 +1,84 @@
+module "es" {
+
+  source  = "../modules/elasticsearch"
+
+  domain_name           = "st-search-prod"
+  elasticsearch_version = "7.10"
+  cluster_config = {
+    dedicated_master_enabled = true
+    instance_count           = 2
+    #instance_type            = "m6g.large.elasticsearch"
+	instance_type            = "t3.medium.elasticsearch" #"r5.large.elasticsearch"
+    zone_awareness_enabled   = true
+    availability_zone_count  = 2
+  }
+  
+  advanced_security_options = {
+    enabled = true
+	internal_user_database_enabled = true
+    master_user_options = {
+      master_user_name     = var.search_username
+      master_user_password = var.search_password
+    }
+  }
+  ebs_options = {
+    ebs_enabled = "true"
+    volume_size = "100"
+  }
+
+  encrypt_at_rest = {
+    enabled    = true
+  #  kms_key_id = "arn:aws:kms:us-east-1:123456789101:key/cccc103b-4ba3-5993-6fc7-b7e538b25fd8"
+  }
+
+  log_publishing_options = {
+    index_slow_logs = {
+      enabled                          = true
+    cloudwatch_log_group_name = "/aws/OpenSearchService/domains/st-search-uat/index-logs"
+    log_publishing_options_retention = 90
+    }
+    search_slow_logs = {
+      enabled                  = true
+    cloudwatch_log_group_name = "/aws/OpenSearchService/domains/st-search-uat/index-logs/index_slow_logs"
+    }
+    es_application_logs = {
+      enabled                   = true
+      cloudwatch_log_group_name = "/aws/OpenSearchService/domains/st-search-uat/application-logs"
+    }
+    audit_logs = {
+      enabled                   = false
+      cloudwatch_log_group_name = "audit_logs_uat"
+    }
+  }
+
+  advanced_options = {
+    "rest.action.multi.allow_explicit_index" = true
+  }
+  access_policies = templatefile("${path.module}/whitelist.tpl", {#templatefile("${path.module}/whitelist.tpl", {
+    region      = var.region #data.aws_region.current.name,
+    account     = data.aws_caller_identity.current.account_id,
+    domain_name = var.domain_name,
+    whitelist   = jsonencode(var.whitelist)
+  }
+  )
+  vpc_options = {
+   security_group_ids         = [module.es-sg.id]
+   vpc_options_security_group_ids = [module.es-sg.id]
+   subnet_ids              = [module.vpc.private_subnets[0].id, module.vpc.private_subnets[1].id]
+    }
+  domain_endpoint_options = {
+    enforce_https                   = true
+	tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
+    #custom_endpoint_enabled         = true
+    #custom_endpoint                 = "st-search-uat.wellops4500.com"
+    #custom_endpoint_certificate_arn = module.elasticsearch.acm_certificate_arn
+  }
+
+  node_to_node_encryption_enabled                = true
+  snapshot_options_automated_snapshot_start_hour = 23
+
+  tags = {
+    Owner = "terraform"
+    env   = "uat"
+  }
+}

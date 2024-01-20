@@ -1,0 +1,48 @@
+module "bal-acm" {
+  source  = "../modules/acm"
+  
+  domain_name  =  "balfourcare-dev.welltowercloud.com"
+  zone_id      = data.aws_route53_zone.ops_zone.zone_id #module.zones.route53_zone_zone_id["dev.wellops4500.com"]  #module.zones.route53_zone_zone_id["test.faf.us.com"]  #data.aws_route53_zone.zone.zone_id
+
+ # subject_alternative_names = [
+ # "gasb-preview.test.faf.us.com",
+ # "af-preview.test.faf.us.com",
+ #   "asc-live.test.faf.us.com",
+ #   "asc-preview.test.faf.us.com",
+ #   "fasb-live.test.faf.us.com",
+ #   "fasb-preview.test.faf.us.com",
+ #   "gars-live.test.faf.us.com",
+ #   "gars-preview.test.faf.us.com",
+ #   "gasb-live.test.faf.us.com",
+ # ]
+
+  wait_for_validation = true
+
+  tags = {
+    Name = "balfour"
+  }
+}
+module "brandywine-acm" {
+  source  = "../modules/acm"
+  
+  domain_name  =  "brandywine-dev.welltowercloud.com"
+  zone_id      = data.aws_route53_zone.ops_zone.zone_id #module.zones.route53_zone_zone_id["dev.wellops4500.com"]  #module.zones.route53_zone_zone_id["test.faf.us.com"]  #data.aws_route53_zone.zone.zone_id
+
+ # subject_alternative_names = [
+ # "gasb-preview.test.faf.us.com",
+ # "af-preview.test.faf.us.com",
+ #   "asc-live.test.faf.us.com",
+ #   "asc-preview.test.faf.us.com",
+ #   "fasb-live.test.faf.us.com",
+ #   "fasb-preview.test.faf.us.com",
+ #   "gars-live.test.faf.us.com",
+ #   "gars-preview.test.faf.us.com",
+ #   "gasb-live.test.faf.us.com",
+ # ]
+
+  wait_for_validation = true
+
+  tags = {
+    Name = "brandywine"
+  }
+}

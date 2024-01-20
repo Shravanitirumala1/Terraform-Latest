@@ -1,0 +1,7 @@
+region         = "us-east-1"
+profile        = "default"
+domain_name = "st-elastic-uat"
+es_version     = "7.10"
+account = "358646388167"
+account_id = "358646388167"
+whitelist      = ["172.22.128.0/19", "172.22.64.0/19"]

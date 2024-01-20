@@ -1,0 +1,170 @@
+image: registry.gitlab.com/gitlab-org/terraform-images/stable:latest
+variables:
+  TF_ROOT: ${CI_PROJECT_DIR}/${ENV}
+  TF_ADDRESS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${STATE_FILE_NAME}
+
+cache:
+  key: tf-pipeline
+  paths:
+    - ${TF_ROOT}/.terraform
+
+#before_script:
+#  - cd ${TF_ROOT}
+
+stages:
+  - TERRAFORM-PLAN
+  - TERRAFORM-APPLY
+
+# Terraform Plan Execution #
+terraform-plan-execution:OPS:
+  environment: OPS
+  stage: TERRAFORM-PLAN
+  script:
+    - gitlab-terraform init
+    - gitlab-terraform validate
+    - gitlab-terraform plan
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/plan.cache
+    reports:
+      terraform: ${TF_ROOT}/plan.json
+
+terraform-plan-execution:DEV:
+  environment: DEV
+  stage: TERRAFORM-PLAN
+  script:
+    - gitlab-terraform init
+    - gitlab-terraform validate
+    - gitlab-terraform force-unlock -force 549985a7-fbe4-06e1-d395-09547c738f9d
+    # - gitlab-terraform import 'module.eks.kubernetes_config_map.aws_auth[0]' kube-system/aws-auth # Possible fix for configmap
+    - gitlab-terraform plan #-reconfigure
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/plan.cache
+    reports:
+      terraform: ${TF_ROOT}/plan.json
+
+terraform-plan-execution:UAT:
+  environment: UAT
+  stage: TERRAFORM-PLAN
+  script:
+    - gitlab-terraform init
+    - gitlab-terraform validate
+    #- gitlab-terraform force-unlock -force 8599b35b-f1fc-c79a-660d-b8f5c4428ab2
+    #- gitlab-terraform import aws_cloudfront_response_headers_policy.no_index 49168ba9-e410-4343-90a2-cf3262487fcc
+    - gitlab-terraform plan
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/plan.cache
+    reports:
+      terraform: ${TF_ROOT}/plan.json
+
+terraform-plan-execution:PROD:
+  environment: PROD
+  stage: TERRAFORM-PLAN
+  before_script:
+    - cd ${TF_ROOT}
+    #- apk add --no-cache curl jq python3 py3-pip
+    #- pip install awscli
+
+  script:
+    - gitlab-terraform init
+    - gitlab-terraform validate
+    #- gitlab-terraform import aws_wafv2_ip_set.impv4 ccb332ec-4274-483e-ac6e-48860c07120c/IMPERVA/CLOUDFRONT
+    #- gitlab-terraform import aws_wafv2_ip_set.impv6 d1a5a56e-a428-4df8-9f93-4091f4334774/IMPERVA-IPV6/CLOUDFRONT
+    #- gitlab-terraform import aws_cloudfront_cache_policy.webapp a85e58ea-aff7-4a41-bf42-e78e1f38bafa
+    #- gitlab-terraform import aws_cloudfront_cache_policy.webhooks 06b38adf-bd2d-4f87-beca-2473dc8c7d22
+    #- gitlab-terraform import aws_cloudfront_origin_request_policy.webapp b20c8bcd-cf89-40d5-9c6f-70aad1be1f9e
+    #- gitlab-terraform import aws_cloudfront_origin_request_policy.webhooks da9a9c0f-719e-487d-92e3-c8eaa4b75fe6
+    #- gitlab-terraform import aws_cloudfront_cache_policy.webapp a85e58ea-aff7-4a41-bf42-e78e1f38bafa
+    #- gitlab-terraform import aws_cloudfront_cache_policy.webhooks 06b38adf-bd2d-4f87-beca-2473dc8c7d22
+    #- gitlab-terraform import aws_cloudfront_origin_request_policy.webapp b20c8bcd-cf89-40d5-9c6f-70aad1be1f9e
+    #- gitlab-terraform import aws_cloudfront_origin_request_policy.webhooks da9a9c0f-719e-487d-92e3-c8eaa4b75fe6
+    # - gitlab-terraform import 'module.eks.kubernetes_config_map.aws_auth[0]' kube-system/aws-auth # Possible fix for configmap
+    # - gitlab-terraform import 'module.eks.aws_eks_addon.this["coredns"]' eks-prod:coredns
+    # - gitlab-terraform import 'module.eks.aws_eks_addon.this["kube-proxy"]' eks-prod:kube-proxy
+    # - gitlab-terraform import 'module.eks.aws_eks_addon.this["vpc-cni"]' eks-prod:vpc-cni
+    - gitlab-terraform plan
+  artifacts:
+    name: plan
+    paths:
+      - ${TF_ROOT}/plan.cache
+    reports:
+      terraform: ${TF_ROOT}/plan.json
+
+# Terraform Apply Execution #
+
+terraform-apply-execution:OPS:
+  environment: OPS
+  stage: TERRAFORM-APPLY
+  needs: [terraform-plan-execution:OPS]
+  script:
+    - gitlab-terraform apply
+  dependencies:
+    - terraform-plan-execution:OPS
+  when: manual
+  only:
+    - main
+
+terraform-apply-execution:DEV:
+  environment: DEV
+  stage: TERRAFORM-APPLY
+  needs: [terraform-plan-execution:DEV]
+  before_script:
+    - apk update
+    - apk add --no-cache aws-cli
+  script:
+    - gitlab-terraform apply
+  dependencies:
+    - terraform-plan-execution:DEV
+  when: manual
+  only:
+    - main
+
+terraform-apply-execution:UAT:
+  environment: UAT
+  stage: TERRAFORM-APPLY
+  needs: [terraform-plan-execution:UAT]
+  script:
+    - gitlab-terraform init
+    - gitlab-terraform validate
+    # - gitlab-terraform import module..cloudfront.aws_cloudfront_distribution.balfour_cdn E3QIG397MX5PZ0
+    #- gitlab-terraform import aws_cloudfront_cache_policy.webapplication 8e057be5-d0cf-40a8-b05f-06a70480d671
+    - gitlab-terraform apply
+  dependencies:
+    - terraform-plan-execution:UAT
+  when: manual
+  only:
+    - main
+
+terraform-apply-execution:PROD:
+  environment: PROD
+  stage: TERRAFORM-APPLY
+  needs: [terraform-plan-execution:PROD]
+  before_script:
+    - cd ${TF_ROOT}
+    #- apk add --no-cache curl jq python3 py3-pip
+    #- pip install awscli
+
+  script:
+    #- ASSUME_ROLE_ARN="arn:aws:iam::602837221957:role/Cross-Account-Ops-Role"
+    #- TEMP_ROLE=`aws sts assume-role --role-arn $ASSUME_ROLE_ARN --role-session-name test`
+    #- export TEMP_ROLE
+    #- echo $TEMP_ROLE
+    #- export AWS_ACCESS_KEY_ID=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.AccessKeyId')
+    #- export AWS_SECRET_ACCESS_KEY=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SecretAccessKey')
+    #- export AWS_SESSION_TOKEN=$(echo "${TEMP_ROLE}" | jq -r '.Credentials.SessionToken')
+    #- export region=us-east-1
+    #- echo $AWS_ACCESS_KEY_ID
+    #- echo $AWS_SECRET_ACCESS_KEY
+    #- echo $AWS_SESSION_TOKEN
+    #- aws sts get-caller-identity
+    - gitlab-terraform apply
+  dependencies:
+    - terraform-plan-execution:PROD
+  when: manual
+  only:
+    - main

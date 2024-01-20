@@ -1,0 +1,45 @@
+vpc_config = {
+  name                   = "WL-${var.env}-VPC"
+  cidr_block             = "10.110.0.0/16"
+  additional_cidr_blocks = []
+  public_subnets = [
+    {
+      name        = "WL-${var.env}-PUB-1"
+      az          = "us-east-1a"
+      cidr_block  = "10.110.100.0/24"
+      nat_gw_name = "WL-${var.env}-NAT-01"
+    },
+    {
+      name        = "WL-${var.env}-PUB-2"
+      az          = "us-east-1d"
+      cidr_block  = "10.110.200.0/24"
+      nat_gw_name = "WL-${var.env}-NAT-02"
+    }
+  ]
+  public_route_table_name = "WL-${var.env}-PUB-RT"
+  private_subnets = [
+    {
+      name       = "WL-${var.env}-PRI-1"
+      az         = "us-east-1a"
+      cidr_block = "10.110.10.0/24"
+    },
+    {
+      name       = "WL-${var.env}-PRI-2"
+      az         = "us-east-1d"
+      cidr_block = "10.110.20.0/24"
+    },
+    {
+      name       = "WL-${var.env}-PRI-3"
+      az         = "us-east-1a"
+      cidr_block = "10.110.30.0/24"
+    },
+    {
+      name       = "WL-${var.env}-PRI-4"
+      az         = "us-east-1d"
+      cidr_block = "10.110.40.0/24"
+    }
+  ]
+  private_route_table_names = ["WL-${var.env}-PRI-RT1", "WL-${var.env}-PRI-RT2"]
+  nacl_name                 = "WL-${var.env}-UAT-NACL"
+  igw_name                  = "WL-${var.env}-IGW"
+}

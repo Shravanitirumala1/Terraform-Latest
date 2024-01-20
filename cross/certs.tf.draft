@@ -1,0 +1,52 @@
+module "acm" {
+  source  = "../modules/acm"
+  
+  domain_name  =  "*.wellops4500.com"
+  zone_id      = data.aws_route53_zone.ops_zone.zone_id #module.zones.route53_zone_zone_id["prod.wellops4500.com"]  #module.zones.route53_zone_zone_id["test.faf.us.com"]  #data.aws_route53_zone.zone.zone_id
+
+ # subject_alternative_names = [
+ #   "gars-preview.test.faf.us.com",
+ #   "gasb-live.test.faf.us.com",
+ # ]
+
+  wait_for_validation = true
+
+  tags = {
+    Name = "prod wellops4500.com"
+  }
+}
+
+module "elasticsearch" {
+  source  = "../modules/acm"
+  
+  domain_name  =  "wl-search-prod.wellops4500.com"
+  zone_id      = data.aws_route53_zone.ops_zone.zone_id #module.zones.route53_zone_zone_id["prod.wellops4500.com"]  #module.zones.route53_zone_zone_id["test.faf.us.com"]  #data.aws_route53_zone.zone.zone_id
+
+ # subject_alternative_names = [
+ # "gasb-preview.test.faf.us.com",
+ #   "gasb-live.test.faf.us.com",
+ # ]
+
+  wait_for_validation = true
+
+  tags = {
+    Name = "wl-search-prod.wellops4500.com"
+  }
+}
+##wellops4500.com
+#module "wildcard_cert" {
+#  source  = "../modules/acm"
+#  
+#  domain_name  =  "prod.wellops4500.com"
+#  zone_id      =  module.zones.route53_zone_zone_id["prod.wellops4500.com"] #data.aws_route53_zone.pri_zone.zone_id #module.zones.route53_zone_zone_id["test.faf.us.com"]  
+#
+#  subject_alternative_names = [
+#  "*.prod.wellops4500.com",
+#  ]
+# 
+#  wait_for_validation = true
+#
+#  tags = {
+#    Name = "prod.wellops4500.com wildcard cert"
+#  }
+#}

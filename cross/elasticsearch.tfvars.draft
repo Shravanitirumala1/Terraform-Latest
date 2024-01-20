@@ -1,0 +1,7 @@
+region         = "us-east-1"
+profile        = "default"
+domain_name = "wl-elastic-dev"
+es_version     = "7.10"
+account = "602837221957"
+account_id = "602837221957"
+whitelist      = ["172.22.128.0/19", "172.22.64.0/19"]
